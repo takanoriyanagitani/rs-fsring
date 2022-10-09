@@ -10,24 +10,13 @@ where
     move |name: &Name| empty(name).or_else(&f)
 }
 
-/// Creates new empty which converts specified error as 'empty'.
-pub fn new_empty_convert_err2empty<E>(
-    empty: E,
-    err: RingError,
-) -> impl Fn(&Name) -> Result<bool, RingError>
-where
-    E: Fn(&Name) -> Result<bool, RingError>,
-{
-    new_empty_or_else(empty, |re: RingError| match re {
-        err => Ok(true),
-        _ => Err(re),
-    })
-}
-
 /// Creates new empty which converts noent as 'empty'.
 pub fn new_empty_convert_noent2empty<E>(empty: E) -> impl Fn(&Name) -> Result<bool, RingError>
 where
     E: Fn(&Name) -> Result<bool, RingError>,
 {
-    new_empty_convert_err2empty(empty, RingError::NoEntry)
+    new_empty_or_else(empty, |re: RingError| match re {
+        RingError::NoEntry => Ok(true),
+        _ => Err(re),
+    })
 }

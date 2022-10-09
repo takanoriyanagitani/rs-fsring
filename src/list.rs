@@ -1,6 +1,6 @@
 use crate::err::RingError;
 use crate::evt::Event;
-use crate::item::{Item, Name, NamedItem};
+use crate::item::Name;
 
 /// Creates new list which uses a closure to determin if an name must be ignored.
 pub fn new_list_filtered<L, F>(list: L, exists: F) -> impl Fn() -> Result<Vec<Name>, RingError>
