@@ -1,5 +1,3 @@
-use crate::item::Name;
-
 pub enum RingError {
     /// Nothing to get, list or remove.
     NoEntry,

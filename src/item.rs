@@ -8,6 +8,7 @@ impl From<Vec<u8>> for Item {
     }
 }
 
+#[derive(Clone)]
 pub struct Name {
     name: String,
 }

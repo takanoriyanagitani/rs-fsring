@@ -1,4 +1,5 @@
 use crate::err::RingError;
+use crate::evt::Event;
 use crate::item::{Item, Name, NamedItem};
 
 /// Creates new list which uses a closure to determin if an name must be ignored.
@@ -13,5 +14,16 @@ where
             .map(|name| exists(&name).map(|yes: bool| yes.then_some(name)))
             .flat_map(|ron: Result<Option<Name>, RingError>| ron.transpose())
             .collect()
+    }
+}
+
+pub fn new_list_handler<L>(l: L) -> impl Fn() -> Event
+where
+    L: Fn() -> Result<Vec<Name>, RingError>,
+{
+    move || match l() {
+        Ok(v) => Event::NamesGot(v),
+        Err(RingError::NoEntry) => Event::NoPerm("Unable to get list of names.".into()),
+        Err(e) => Event::UnexpectedError(e.into()),
     }
 }

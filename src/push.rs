@@ -1,4 +1,5 @@
 use crate::err::RingError;
+use crate::evt::Event;
 use crate::item::{Item, Name, NamedItem};
 
 /// Creates checked writer from writer which uses a closure to determin if an name already exists.
@@ -24,5 +25,20 @@ where
         let name: Name = name_source()?;
         let named: NamedItem = NamedItem::new(item, name);
         writer(named)
+    }
+}
+
+/// Creates new push request handler.
+pub fn new_push_request_handler<P>(p: P) -> impl Fn(Item) -> Event
+where
+    P: Fn(Item) -> Result<(), RingError>,
+{
+    move |item: Item| match p(item) {
+        Ok(_) => Event::Success,
+        Err(RingError::NoSpace) => Event::TooManyItemsAlready,
+        Err(RingError::Exist) => Event::Again,
+        Err(RingError::ItemMayExists(s)) => Event::NoPerm(s),
+        Err(RingError::Locked(s)) => Event::NoPerm(s),
+        Err(e) => Event::UnexpectedError(e.into()),
     }
 }

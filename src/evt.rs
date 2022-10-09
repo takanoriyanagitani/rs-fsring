@@ -29,4 +29,6 @@ pub enum Event {
 
     /// Item got, but unreadable(bit rot?).
     InvalidItem(String),
+
+    UnexpectedError(String),
 }
