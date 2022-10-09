@@ -1,6 +1,6 @@
 use crate::err::RingError;
 use crate::evt::Event;
-use crate::item::{Item, Name, NamedItem};
+use crate::item::{Name, NamedItem};
 
 /// Creates new read handler.
 pub fn new_read_handler<R>(r: R) -> impl Fn(&Name) -> Event
