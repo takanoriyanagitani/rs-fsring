@@ -1,4 +1,4 @@
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct Item {
     raw: Vec<u8>,
 }
@@ -15,7 +15,7 @@ impl From<Vec<u8>> for Item {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Name {
     name: String,
 }
@@ -40,7 +40,7 @@ impl From<Name> for String {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct NamedItem {
     item: Item,
     name: Name,
