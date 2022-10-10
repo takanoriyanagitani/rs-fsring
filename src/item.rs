@@ -1,3 +1,4 @@
+#[derive(Debug, PartialEq)]
 pub struct Item {
     raw: Vec<u8>,
 }
@@ -14,7 +15,7 @@ impl From<Vec<u8>> for Item {
     }
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Name {
     name: String,
 }
@@ -28,12 +29,18 @@ impl From<String> for Name {
         Self { name }
     }
 }
+impl From<&str> for Name {
+    fn from(s: &str) -> Self {
+        Self::from(String::from(s))
+    }
+}
 impl From<Name> for String {
     fn from(n: Name) -> Self {
         n.name
     }
 }
 
+#[derive(Debug, PartialEq)]
 pub struct NamedItem {
     item: Item,
     name: Name,

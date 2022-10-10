@@ -1,5 +1,6 @@
 use crate::item::{Name, NamedItem};
 
+#[derive(Debug, PartialEq)]
 pub enum Event {
     Success,
 
