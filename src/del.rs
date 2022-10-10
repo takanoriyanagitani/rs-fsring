@@ -54,3 +54,21 @@ where
         Err(evt) => evt,
     }
 }
+
+#[cfg(test)]
+mod del {
+
+    mod delete_handler_new_checked {
+        use crate::evt::Event;
+        use crate::item::Name;
+
+        #[test]
+        fn test_checker_invalid_name() {
+            let chk = |_: Name| Err(Event::BadRequest);
+            let dir = "";
+            let remover = crate::del::delete_handler_new_checked(chk, dir);
+            let evt: Event = remover(Name::from("always-fail.dat"));
+            assert_eq!(evt, Event::BadRequest);
+        }
+    }
+}
