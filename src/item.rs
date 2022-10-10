@@ -18,6 +18,11 @@ impl From<Vec<u8>> for Item {
 pub struct Name {
     name: String,
 }
+impl Name {
+    pub fn as_str(&self) -> &str {
+        self.name.as_str()
+    }
+}
 impl From<String> for Name {
     fn from(name: String) -> Self {
         Self { name }
