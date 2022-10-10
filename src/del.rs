@@ -25,13 +25,12 @@ fn remove_by_fullpath<P>(full: P) -> Event
 where
     P: AsRef<Path>,
 {
-    match remove_file(full) {
-        Ok(_) => Event::Success,
-        Err(e) => match e.kind() {
+    remove_file(full)
+        .map(|_| Event::Success)
+        .unwrap_or_else(|e| match e.kind() {
             ErrorKind::NotFound => Event::Success,
             _ => Event::UnexpectedError(format!("io error kind: {}", e.kind())),
-        },
-    }
+        })
 }
 
 fn remover_unchecked_new<P>(dirname: P) -> impl Fn(Name) -> Event
