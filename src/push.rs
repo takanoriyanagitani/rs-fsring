@@ -42,3 +42,21 @@ where
         Err(e) => Event::UnexpectedError(e.into()),
     }
 }
+
+#[cfg(test)]
+mod test_push {
+
+    mod new_push_request_handler {
+        use crate::evt::Event;
+        use crate::item::Item;
+        use crate::push;
+
+        #[test]
+        fn test_ok() {
+            let p = |_: Item| Ok(());
+            let f = push::new_push_request_handler(p);
+            let evt: Event = f(Item::from(vec![]));
+            assert_eq!(evt, Event::Success);
+        }
+    }
+}
