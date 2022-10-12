@@ -17,6 +17,7 @@ where
     }
 }
 
+/// Creates new list handler which uses a closure to try to get names.
 pub fn new_list_handler<L>(l: L) -> impl Fn() -> Event
 where
     L: Fn() -> Result<Vec<Name>, RingError>,
