@@ -47,6 +47,7 @@ where
 mod test_push {
 
     mod new_push_request_handler {
+        use crate::err::RingError;
         use crate::evt::Event;
         use crate::item::Item;
         use crate::push;
@@ -57,6 +58,14 @@ mod test_push {
             let f = push::new_push_request_handler(p);
             let evt: Event = f(Item::from(vec![]));
             assert_eq!(evt, Event::Success);
+        }
+
+        #[test]
+        fn test_toomany() {
+            let p = |_: Item| Err(RingError::NoSpace);
+            let f = push::new_push_request_handler(p);
+            let evt: Event = f(Item::from(vec![]));
+            assert_eq!(evt, Event::TooManyItemsAlready);
         }
     }
 }
