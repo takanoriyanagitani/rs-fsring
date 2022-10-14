@@ -20,3 +20,14 @@ where
         _ => Err(re),
     })
 }
+
+/// Creates new empty which uses a closure to determin if an item is 'empty'.
+pub fn new_empty_by_len<L>(get_len: L) -> impl Fn(&Name) -> Result<bool, RingError>
+where
+    L: Fn(&Name) -> Result<u64, RingError>,
+{
+    move |name: &Name| {
+        let l: u64 = get_len(name)?;
+        Ok(0.eq(&l))
+    }
+}
