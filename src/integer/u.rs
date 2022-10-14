@@ -10,3 +10,20 @@ pub fn name_checker_u8_new() -> impl Fn(Name) -> Result<Name, Event> {
             .map(|_: u8| name)
     }
 }
+
+#[cfg(test)]
+mod test_u {
+
+    mod name_checker_u8_new {
+        use crate::integer::u;
+
+        use crate::item::Name;
+
+        #[test]
+        fn test_zero() {
+            let chk = u::name_checker_u8_new();
+            let nam = chk(Name::from("0")).unwrap();
+            assert_eq!(nam, Name::from("0"));
+        }
+    }
+}
