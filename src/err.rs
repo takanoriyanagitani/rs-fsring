@@ -1,3 +1,4 @@
+#[derive(Debug)]
 pub enum RingError {
     /// Nothing to get, list or remove.
     NoEntry,

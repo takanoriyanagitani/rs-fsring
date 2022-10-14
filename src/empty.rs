@@ -31,3 +31,22 @@ where
         Ok(0.eq(&l))
     }
 }
+
+#[cfg(test)]
+mod test_empty {
+
+    mod new_empty_by_len {
+
+        use crate::item::Name;
+
+        use crate::empty;
+
+        #[test]
+        fn test_zero_len() {
+            let f = |_: &Name| Ok(0);
+            let ef = empty::new_empty_by_len(f);
+            let is_empty: bool = ef(&Name::from("")).unwrap();
+            assert_eq!(is_empty, true);
+        }
+    }
+}
