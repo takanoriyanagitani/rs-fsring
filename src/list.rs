@@ -28,3 +28,21 @@ where
         Err(e) => Event::UnexpectedError(e.into()),
     }
 }
+
+#[cfg(test)]
+mod test_list {
+
+    mod new_list_handler {
+
+        use crate::evt::Event;
+        use crate::list;
+
+        #[test]
+        fn test_empty() {
+            let f = || Ok(vec![]);
+            let l = list::new_list_handler(f);
+            let evt: Event = l();
+            assert_eq!(evt, Event::NamesGot(vec![]));
+        }
+    }
+}
