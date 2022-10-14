@@ -15,3 +15,22 @@ where
         Err(e) => Event::UnexpectedError(e.into()),
     }
 }
+
+#[cfg(test)]
+mod test_read {
+
+    mod new_read_handler {
+        use crate::evt::Event;
+        use crate::item::{Item, Name, NamedItem};
+        use crate::read;
+
+        #[test]
+        fn test_ok() {
+            let ni: NamedItem = NamedItem::new(Item::from(vec![]), Name::from(""));
+            let f = |_: &Name| Ok(ni.clone());
+            let r = read::new_read_handler(f);
+            let evt: Event = r(&Name::from(""));
+            assert_eq!(evt, Event::ItemGot(ni.clone()));
+        }
+    }
+}
