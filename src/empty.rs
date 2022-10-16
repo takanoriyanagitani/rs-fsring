@@ -89,5 +89,14 @@ mod test_empty {
             let r = f(Name::from(""));
             assert_eq!(r, Err(Event::TooManyItemsAlready));
         }
+
+        #[test]
+        fn test_1() {
+            let get_next = |n: Name| Ok(n);
+            let is_empty = |_: &Name| Err(Event::Again);
+            let f = empty::new_next_retry_u8(get_next, is_empty, 1);
+            let r = f(Name::from(""));
+            assert_eq!(r, Err(Event::TooManyItemsAlready));
+        }
     }
 }
