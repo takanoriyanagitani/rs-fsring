@@ -46,8 +46,8 @@ mod test_u {
 
         #[test]
         fn test_valid_name() {
-            let n2u = |n: Name| Ok(0x41);
-            let u2n = |u: u8| Ok(Name::from("42"));
+            let n2u = |_: Name| Ok(0x41);
+            let u2n = |_: u8| Ok(Name::from("42"));
             let f = u::next_gen_by_prev_u8_new(n2u, u2n);
             let n: Name = f(Name::from("41")).unwrap();
             assert_eq!(n, Name::from("42"));
