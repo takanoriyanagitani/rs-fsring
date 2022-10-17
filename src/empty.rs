@@ -107,5 +107,14 @@ mod test_empty {
             let n: Name = f(Name::from("")).unwrap();
             assert_eq!(n, Name::from("42"));
         }
+
+        #[test]
+        fn test_stale_prev() {
+            let get_next = |_: Name| Ok(Name::from("42"));
+            let is_empty = |_: &Name| Ok(false);
+            let f = empty::new_next_retry_u8(get_next, is_empty, 1);
+            let r = f(Name::from(""));
+            assert_eq!(r, Err(Event::TooManyItemsAlready));
+        }
     }
 }
