@@ -14,14 +14,29 @@ export RUSTFLAGS="$RUSTFLAGS -Cpanic=abort"
 
 cargo build --verbose $CARGO_OPTIONS
 
-export LLVM_PROFILE_FILE=yanagitani.profraw
-
 cargo test --verbose $CARGO_OPTIONS -- --include-ignored
+
+#grcov . \
+#  --source-dir . \
+#  --binary-path ./target/debug/ \
+#  --output-type html \
+#  --branch \
+#  --ignore-not-existing \
+#  --output-path ./target/debug/coverage/
+
+rm --force ./target/debug/lcov.info
 
 grcov . \
   --source-dir . \
   --binary-path ./target/debug/ \
-  --output-type html \
+  --output-type lcov \
   --branch \
   --ignore-not-existing \
-  --output-path ./target/debug/coverage/
+  --output-path ./target/debug/lcov.info
+
+genhtml \
+  --output ./target/debug/coverage/ \
+  --show-details \
+  --highlight \
+  --ignore-errors source \
+  --legend ./target/debug/lcov.info
