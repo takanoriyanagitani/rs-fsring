@@ -30,6 +30,7 @@ mod test_u {
     mod name_checker_u8_new {
         use crate::integer::u;
 
+        use crate::evt::Event;
         use crate::item::Name;
 
         #[test]
@@ -37,6 +38,13 @@ mod test_u {
             let chk = u::name_checker_u8_new();
             let nam = chk(Name::from("0")).unwrap();
             assert_eq!(nam, Name::from("0"));
+        }
+
+        #[test]
+        fn test_invalid() {
+            let chk = u::name_checker_u8_new();
+            let r = chk(Name::from("invalid"));
+            assert_eq!(r, Err(Event::BadRequest));
         }
     }
 
