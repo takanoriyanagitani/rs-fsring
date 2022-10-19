@@ -39,4 +39,5 @@ genhtml \
   --show-details \
   --highlight \
   --ignore-errors source \
-  --legend ./target/debug/lcov.info
+  --legend ./target/debug/lcov.info \
+  --css-file ./cov.css
