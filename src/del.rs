@@ -1,73 +1,36 @@
-use std::fs::remove_file;
-use std::io::ErrorKind;
-use std::path::Path;
+use std::path::PathBuf;
 
-use crate::err::RingError;
 use crate::evt::Event;
 use crate::item::Name;
 
-use crate::compose::compose;
-use crate::full::fullpath_builder_new;
-
-/// Creates new delete handler which converts ENOENT error as Success.
-pub fn new_delete_handler<D>(d: D) -> impl Fn(&Name) -> Event
+/// Creates new remover which uses a closure to build `PathBuf` from `Name`.
+///
+/// Use this to keep hardlink if doing so is more SSD friendly.
+pub fn truncate_fs_new<B>(path_builder: B) -> impl Fn(Name) -> Event
 where
-    D: Fn(&Name) -> Result<(), RingError>,
+    B: Fn(&Name) -> PathBuf,
 {
-    move |name: &Name| match d(name) {
-        Ok(_) => Event::Success,
-        Err(RingError::NoEntry) => Event::Success, // specified name absent.
-        Err(e) => Event::UnexpectedError(e.into()),
+    move |n: Name| {
+        let p: PathBuf = path_builder(&n);
+        std::fs::File::create(p)
+            .map(|_| Event::Removed(n))
+            .unwrap_or_else(|e| Event::UnexpectedError(format!("{}", e)))
     }
 }
 
-fn remove_by_fullpath<P>(full: P) -> Event
+/// Creates new delete request handler which uses closures to remove item/set removed name.
+pub fn del_request_handler_new<T, S>(tr: T, mut set_removed: S) -> impl FnMut(Name) -> Event
 where
-    P: AsRef<Path>,
+    T: Fn(Name) -> Event,
+    S: FnMut(Name) -> Result<(), Event>,
 {
-    remove_file(full)
-        .map(|_| Event::Success)
-        .unwrap_or_else(|e| match e.kind() {
-            ErrorKind::NotFound => Event::Success,
-            _ => Event::UnexpectedError(format!("io error kind: {}", e.kind())),
-        })
-}
-
-fn remover_unchecked_new<P>(dirname: P) -> impl Fn(Name) -> Event
-where
-    P: AsRef<Path>,
-{
-    let builder = fullpath_builder_new(dirname);
-    compose(builder, remove_by_fullpath)
-}
-
-/// Creates new checked delete handler which tries to remove by checked name.
-pub fn delete_handler_new_checked<C, P>(checker: C, dirname: P) -> impl Fn(Name) -> Event
-where
-    C: Fn(Name) -> Result<Name, Event>,
-    P: AsRef<Path>,
-{
-    let remover = remover_unchecked_new(dirname);
-    move |name: Name| match checker(name) {
-        Ok(n) => remover(n),
-        Err(evt) => evt,
-    }
-}
-
-#[cfg(test)]
-mod del {
-
-    mod delete_handler_new_checked {
-        use crate::evt::Event;
-        use crate::item::Name;
-
-        #[test]
-        fn test_checker_invalid_name() {
-            let chk = |_: Name| Err(Event::BadRequest);
-            let dir = "";
-            let remover = crate::del::delete_handler_new_checked(chk, dir);
-            let evt: Event = remover(Name::from("always-fail.dat"));
-            assert_eq!(evt, Event::BadRequest);
+    move |n: Name| {
+        let evt: Event = tr(n);
+        match evt {
+            Event::Removed(removed_name) => set_removed(removed_name)
+                .map(|_| Event::Success)
+                .unwrap_or_else(|e| Event::UnexpectedError(format!("{:#?}", e))),
+            _ => evt,
         }
     }
 }

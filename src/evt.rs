@@ -4,6 +4,10 @@ use crate::item::{Name, NamedItem};
 pub enum Event {
     Success,
 
+    /// The named buffer is now empty.
+    Removed(Name),
+
+    /// The named buffer wrote(can be dirty; implementation may intentionally skip fsync).
     ItemWrote(Name),
 
     /// Named item got.
