@@ -34,6 +34,9 @@ where
     }
 }
 
+/// Creates new empty checker which uses a closure to generate `PathBuf` from `Name`.
+///
+/// `std::io::ErrorKind::NotFound` will be converted to Ok(true).
 pub fn name2empty_fs_new<F>(f: F) -> impl Fn(Name) -> Result<bool, Event>
 where
     F: Fn(Name) -> PathBuf,
