@@ -4,6 +4,8 @@ use crate::item::{Name, NamedItem};
 pub enum Event {
     Success,
 
+    ItemWrote(Name),
+
     /// Named item got.
     ItemGot(NamedItem),
 
