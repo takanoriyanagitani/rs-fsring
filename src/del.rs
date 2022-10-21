@@ -13,7 +13,7 @@ where
     move |n: Name| {
         let p: PathBuf = path_builder(&n);
         std::fs::File::create(p)
-            .map(|_| Event::Removed(n))
+            .map(|_| Event::Empty(n))
             .unwrap_or_else(|e| Event::UnexpectedError(format!("{}", e)))
     }
 }
@@ -27,7 +27,7 @@ where
     move |n: Name| {
         let evt: Event = tr(n);
         match evt {
-            Event::Removed(removed_name) => set_removed(removed_name)
+            Event::Empty(removed_name) => set_removed(removed_name)
                 .map(|_| Event::Success)
                 .unwrap_or_else(|e| Event::UnexpectedError(format!("{:#?}", e))),
             _ => evt,

@@ -5,7 +5,10 @@ pub enum Event {
     Success,
 
     /// The named buffer is now empty.
-    Removed(Name),
+    Empty(Name),
+
+    /// The named buffer is used.
+    Used(Name),
 
     /// The named buffer wrote(can be dirty; implementation may intentionally skip fsync).
     ItemWrote(Name),
