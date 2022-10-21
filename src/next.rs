@@ -65,4 +65,51 @@ mod test_next {
             assert_eq!(evt, Event::Empty(Name::from("42")));
         }
     }
+
+    mod get_next_checked_new {
+
+        use crate::evt::Event;
+        use crate::item::Name;
+        use crate::next;
+
+        #[test]
+        fn test_empty() {
+            let get_next_unchecked = || Ok(Name::from("42"));
+            let is_empty = |_: &Name| Ok(true);
+
+            let mut f = next::get_next_checked_new(get_next_unchecked, is_empty);
+            let n: Name = f().unwrap();
+            assert_eq!(n, Name::from("42"));
+        }
+
+        #[test]
+        fn test_noent() {
+            let get_next_unchecked = || Ok(Name::from(""));
+            let is_empty = |_: &Name| Err(Event::NoEntry(Name::from("42")));
+
+            let mut f = next::get_next_checked_new(get_next_unchecked, is_empty);
+            let n: Name = f().unwrap();
+            assert_eq!(n, Name::from("42"));
+        }
+
+        #[test]
+        fn test_used() {
+            let get_next_unchecked = || Ok(Name::from("42"));
+            let is_empty = |_: &Name| Ok(false);
+
+            let mut f = next::get_next_checked_new(get_next_unchecked, is_empty);
+            let r = f();
+            assert_eq!(r, Err(Event::Used(Name::from("42"))));
+        }
+
+        #[test]
+        fn test_unexpected() {
+            let get_next_unchecked = || Ok(Name::from(""));
+            let is_empty = |_: &Name| Err(Event::Broken(Name::from("42")));
+
+            let mut f = next::get_next_checked_new(get_next_unchecked, is_empty);
+            let r = f();
+            assert_eq!(r, Err(Event::Broken(Name::from("42"))));
+        }
+    }
 }
