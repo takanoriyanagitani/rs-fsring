@@ -14,6 +14,9 @@ export RUSTFLAGS="$RUSTFLAGS -Cpanic=abort"
 
 cargo build --verbose $CARGO_OPTIONS
 
+rm -f *.profraw
+export LLVM_PROFILE_FILE='prefix-%p-%m.profraw'
+
 cargo test --verbose $CARGO_OPTIONS -- --include-ignored
 
 #grcov . \

@@ -31,3 +31,38 @@ where
         }
     }
 }
+
+#[cfg(test)]
+mod test_next {
+
+    mod get_next_simple_retry {
+
+        use crate::evt::Event;
+        use crate::item::Name;
+        use crate::next;
+
+        #[test]
+        fn test_empty_candidates() {
+            let get_next = || None;
+            let limit = 256;
+            let evt: Event = next::get_next_simple_retry(get_next, limit);
+            assert_eq!(evt, Event::TooManyItemsAlready);
+        }
+
+        #[test]
+        fn test_no_empty() {
+            let get_next = || Some(Err(Event::Used(Name::from(""))));
+            let limit = 256;
+            let evt: Event = next::get_next_simple_retry(get_next, limit);
+            assert_eq!(evt, Event::TooManyItemsAlready);
+        }
+
+        #[test]
+        fn test_empty1st() {
+            let get_next = || Some(Ok(Name::from("42")));
+            let limit = 256;
+            let evt: Event = next::get_next_simple_retry(get_next, limit);
+            assert_eq!(evt, Event::Empty(Name::from("42")));
+        }
+    }
+}
