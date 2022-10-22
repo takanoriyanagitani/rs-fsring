@@ -29,6 +29,7 @@ where
     }
 }
 
+/// Creates checked list handler which uses closures to get unchecked list and check names.
 pub fn list_request_handler_new<L, F>(list: L, filter: F) -> impl Fn() -> Event
 where
     L: Fn() -> Result<Vec<Name>, Event>,
