@@ -2,11 +2,11 @@ use crate::err::RingError;
 use crate::evt::Event;
 use crate::item::Name;
 
-pub fn names2checked<C>(names: Vec<Name>, check: C) -> Result<Vec<Name>, Event>
+fn names2checked<C>(unchecked: Vec<Name>, check: &C) -> Result<Vec<Name>, Event>
 where
     C: Fn(&Name) -> Result<bool, Event>,
 {
-    let unchecked = names.into_iter();
+    let unchecked = unchecked.into_iter();
     let mapd = unchecked.flat_map(|n: Name| {
         let r: Option<Result<Name, Event>> = match check(&n) {
             Ok(true) => Some(Ok(n)),
@@ -16,6 +16,29 @@ where
         r
     });
     mapd.collect()
+}
+
+fn list_filtered_new<L, F>(list: L, filter: F) -> impl Fn() -> Result<Vec<Name>, Event>
+where
+    L: Fn() -> Result<Vec<Name>, Event>,
+    F: Fn(&Name) -> Result<bool, Event>,
+{
+    move || {
+        let unchecked: Vec<Name> = list()?;
+        names2checked(unchecked, &filter)
+    }
+}
+
+pub fn list_request_handler_new<L, F>(list: L, filter: F) -> impl Fn() -> Event
+where
+    L: Fn() -> Result<Vec<Name>, Event>,
+    F: Fn(&Name) -> Result<bool, Event>,
+{
+    let f = list_filtered_new(list, filter);
+    move || match f() {
+        Ok(names) => Event::NamesGot(names),
+        Err(e) => e,
+    }
 }
 
 /// Creates new list which uses a closure to determin if an name must be ignored.
