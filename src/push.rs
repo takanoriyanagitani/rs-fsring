@@ -24,3 +24,25 @@ where
         }
     }
 }
+
+#[cfg(test)]
+mod test_push {
+
+    mod push_new {
+
+        use crate::evt::Event;
+        use crate::item::{Item, Name, NamedItem};
+
+        use crate::push;
+
+        #[test]
+        fn test_no_next() {
+            let get_name = || Err(Event::TooManyItemsAlready);
+            let set_next = |_: Name| Ok(());
+            let wtr = |i: NamedItem| Ok(i.into());
+            let mut p = push::push_new(get_name, set_next, wtr);
+            let r = p(Item::from(vec![]));
+            assert_eq!(r, Err(Event::TooManyItemsAlready));
+        }
+    }
+}

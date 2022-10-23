@@ -61,3 +61,9 @@ impl From<NamedItem> for Item {
         named.item
     }
 }
+
+impl From<NamedItem> for Name {
+    fn from(named: NamedItem) -> Self {
+        named.name
+    }
+}
