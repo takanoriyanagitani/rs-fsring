@@ -85,4 +85,19 @@ mod test_list {
             assert_eq!(evt, Event::NamesGot(vec![]));
         }
     }
+
+    mod list_request_handler_new {
+        use crate::evt::Event;
+        use crate::item::Name;
+        use crate::list;
+
+        #[test]
+        fn test_empty() {
+            let flist = || Ok(vec![]);
+            let filter = |_: &Name| Ok(true);
+            let f = list::list_request_handler_new(flist, filter);
+            let evt: Event = f();
+            assert_eq!(evt, Event::NamesGot(vec![]));
+        }
+    }
 }
