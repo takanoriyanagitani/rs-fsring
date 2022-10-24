@@ -2,5 +2,9 @@
 name = "rs-fsring"
 version = "0.1.0"
 edition = "2021"
+description = "A ring(like) buffer using filesystem"
+license = "Apache-2.0"
+documentation = "https://docs.rs/crate/rs-fsring/latest"
+repository = "https://github.com/takanoriyanagitani/rs-fsring"
 
 [dependencies]
