@@ -2,6 +2,16 @@ use crate::err::RingError;
 use crate::evt::Event;
 use crate::item::{Name, NamedItem};
 
+pub fn read_handler_new<R>(r: R) -> impl Fn(&Name) -> Event
+where
+    R: Fn(&Name) -> Result<NamedItem, Event>,
+{
+    move |name: &Name| match r(name) {
+        Ok(named) => Event::ItemGot(named),
+        Err(e) => e,
+    }
+}
+
 /// Creates new read handler.
 pub fn new_read_handler<R>(r: R) -> impl Fn(&Name) -> Event
 where
