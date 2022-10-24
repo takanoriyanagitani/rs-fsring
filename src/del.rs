@@ -34,3 +34,22 @@ where
         }
     }
 }
+
+#[cfg(test)]
+mod test_del {
+
+    mod del_request_handler_new {
+        use crate::del;
+        use crate::evt::Event;
+        use crate::item::Name;
+
+        #[test]
+        fn test_removed() {
+            let tr = |_: Name| Event::Empty(Name::from("42"));
+            let set_removed = |_: Name| Ok(());
+            let mut f = del::del_request_handler_new(tr, set_removed);
+            let evt: Event = f(Name::from(""));
+            assert_eq!(evt, Event::Success);
+        }
+    }
+}
