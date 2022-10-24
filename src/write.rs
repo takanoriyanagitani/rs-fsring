@@ -1,6 +1,11 @@
 use crate::evt::Event;
 use crate::item::{Name, NamedItem};
 
+/// Creates checked writer which uses closures to check and write named item.
+///
+/// # Arguments
+/// - unchecked: Writes `NamedItem` after check.
+/// - is_empty:  Checks if `Name` is empty.
 pub fn writer_checked_new<W, E>(
     unchecked: W,
     is_empty: E,
