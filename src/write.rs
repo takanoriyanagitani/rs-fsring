@@ -23,3 +23,22 @@ where
         }
     }
 }
+
+#[cfg(test)]
+mod test_write {
+
+    mod writer_checked_new {
+        use crate::evt::Event;
+        use crate::item::{Item, Name, NamedItem};
+        use crate::write;
+
+        #[test]
+        fn test_non_empty() {
+            let unchecked = |_: NamedItem| Ok(Name::from(""));
+            let is_empty = |_: &Name| Ok(false);
+            let f = write::writer_checked_new(unchecked, is_empty);
+            let r = f(NamedItem::new(Item::from(vec![]), Name::from("")));
+            assert_eq!(r, Err(Event::Again));
+        }
+    }
+}
