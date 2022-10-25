@@ -57,5 +57,44 @@ mod test_list {
             let evt: Event = f();
             assert_eq!(evt, Event::NamesGot(vec![]));
         }
+
+        #[test]
+        fn test_unable2get_list() {
+            let flist = || Err(Event::NoPerm("".into()));
+            let filter = |_: &Name| Ok(true);
+            let f = list::list_request_handler_new(flist, filter);
+            let evt: Event = f();
+            assert_eq!(evt, Event::NoPerm("".into()));
+        }
+
+        #[test]
+        fn test_empty_all() {
+            let flist = || Ok(vec![Name::from("00"), Name::from("01")]);
+            let filter = |_: &Name| Ok(false);
+            let f = list::list_request_handler_new(flist, filter);
+            let evt: Event = f();
+            assert_eq!(evt, Event::NamesGot(vec![]));
+        }
+
+        #[test]
+        fn test_nonempty_all() {
+            let flist = || Ok(vec![Name::from("00"), Name::from("01")]);
+            let filter = |_: &Name| Ok(true);
+            let f = list::list_request_handler_new(flist, filter);
+            let evt: Event = f();
+            assert_eq!(
+                evt,
+                Event::NamesGot(vec![Name::from("00"), Name::from("01"),])
+            );
+        }
+
+        #[test]
+        fn test_filter_err() {
+            let flist = || Ok(vec![Name::from("00")]);
+            let filter = |_: &Name| Err(Event::NoPerm("".into()));
+            let f = list::list_request_handler_new(flist, filter);
+            let evt: Event = f();
+            assert_eq!(evt, Event::NoPerm("".into()),);
+        }
     }
 }

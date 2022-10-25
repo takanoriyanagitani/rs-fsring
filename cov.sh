@@ -17,6 +17,8 @@ cargo build --verbose $CARGO_OPTIONS
 rm -f *.profraw
 export LLVM_PROFILE_FILE='prefix-%p-%m.profraw'
 
+rm --force --recursive ./target/debug
+
 cargo test --verbose $CARGO_OPTIONS -- --include-ignored
 
 #grcov . \
@@ -26,8 +28,6 @@ cargo test --verbose $CARGO_OPTIONS -- --include-ignored
 #  --branch \
 #  --ignore-not-existing \
 #  --output-path ./target/debug/coverage/
-
-rm --force ./target/debug/lcov.info
 
 grcov . \
   --source-dir . \
