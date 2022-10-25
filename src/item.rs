@@ -39,6 +39,12 @@ impl From<Name> for String {
         n.name
     }
 }
+impl From<u8> for Name {
+    fn from(raw: u8) -> Self {
+        let name: String = format!("{:02x}", raw);
+        Self { name }
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct NamedItem {
