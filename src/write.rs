@@ -7,19 +7,31 @@ use crate::evt::Event;
 use crate::full;
 use crate::item::{Item, Name, NamedItem};
 
+fn write_bytes<W>(w: &mut W, b: &[u8]) -> Result<(), Event>
+where
+    W: Write,
+{
+    w.write_all(b)
+        .map_err(|e| Event::UnexpectedError(format!("Unable to write bytes: {}", e)))
+}
+
+fn write_flush<W>(mut w: W) -> Result<(), Event>
+where
+    W: Write,
+{
+    w.flush()
+        .map_err(|e| Event::UnexpectedError(format!("Unable to flush: {}", e)))
+}
+
 fn item2write<W>(i: Item, mut w: W) -> Result<(), Event>
 where
     W: Write,
 {
     let mut bw = BufWriter::new(w.by_ref());
     let v: Vec<u8> = i.into();
-    bw.write_all(&v)
-        .map_err(|e| Event::UnexpectedError(format!("Unable to write item: {}", e)))?;
-    bw.flush()
-        .map_err(|e| Event::UnexpectedError(format!("Unable to flush: {}", e)))?;
-    drop(bw);
-    w.flush()
-        .map_err(|e| Event::UnexpectedError(format!("Unable to flush: {}", e)))?;
+    write_bytes(&mut bw, &v)?;
+    write_flush(bw)?;
+    write_flush(w)?;
     Ok(())
 }
 
