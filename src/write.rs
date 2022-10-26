@@ -1,5 +1,59 @@
+use std::fs::File;
+use std::io::{BufWriter, Write};
+use std::path::{Path, PathBuf};
+
+use crate::empty;
 use crate::evt::Event;
-use crate::item::{Name, NamedItem};
+use crate::full;
+use crate::item::{Item, Name, NamedItem};
+
+fn item2write<W>(i: Item, mut w: W) -> Result<(), Event>
+where
+    W: Write,
+{
+    let mut bw = BufWriter::new(w.by_ref());
+    let v: Vec<u8> = i.into();
+    bw.write_all(&v)
+        .map_err(|e| Event::UnexpectedError(format!("Unable to write item: {}", e)))?;
+    bw.flush()
+        .map_err(|e| Event::UnexpectedError(format!("Unable to flush: {}", e)))?;
+    drop(bw);
+    w.flush()
+        .map_err(|e| Event::UnexpectedError(format!("Unable to flush: {}", e)))?;
+    Ok(())
+}
+
+fn item2path<P>(i: Item, p: P) -> Result<(), Event>
+where
+    P: AsRef<Path> + std::fmt::Debug,
+{
+    let f: File = File::create(p.as_ref()).map_err(|e| {
+        Event::UnexpectedError(format!("Unable to create named item({:#?}): {}", p, e))
+    })?;
+    item2write(i, f)
+}
+
+/// Creates new unchecked writer which uses a closure to build path to write a named item.
+pub fn writer_unchecked_new<B>(path_builder: B) -> impl Fn(NamedItem) -> Result<Name, Event>
+where
+    B: Fn(Name) -> PathBuf,
+{
+    move |named: NamedItem| {
+        let (name, item) = named.into_pair();
+        let p: PathBuf = path_builder(name.clone());
+        item2path(item, p)?;
+        Ok(name)
+    }
+}
+
+/// Creates new unchecked writer which uses default path builder.
+pub fn writer_unchecked_new_default<P>(dirname: P) -> impl Fn(NamedItem) -> Result<Name, Event>
+where
+    P: AsRef<Path>,
+{
+    let path_builder = full::fullpath_builder_new(dirname);
+    writer_unchecked_new(path_builder)
+}
 
 /// Creates checked writer which uses closures to check and write named item.
 ///
@@ -22,6 +76,18 @@ where
             e => Err(Event::UnexpectedError(format!("{:#?}", e))),
         }
     }
+}
+
+/// Creates new checked writer which uses default unchecked writer and default empty checker.
+pub fn writer_checked_new_default<P>(dirname: P) -> impl Fn(NamedItem) -> Result<Name, Event>
+where
+    P: AsRef<Path>,
+{
+    let p: &Path = dirname.as_ref();
+    let unchecked = writer_unchecked_new_default(p.to_path_buf());
+    let empty_checker = empty::empty_checker_new_default(p.to_path_buf());
+    let f = move |n: &Name| empty_checker(n.clone());
+    writer_checked_new(unchecked, f)
 }
 
 #[cfg(test)]

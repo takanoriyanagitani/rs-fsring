@@ -1,4 +1,4 @@
-use crate::item::{Name, NamedItem};
+use crate::item::{Item, Name, NamedItem};
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Event {
@@ -10,7 +10,7 @@ pub enum Event {
     /// The named buffer is used.
     Used(Name),
 
-    /// The named buffer wrote(can be dirty; implementation may intentionally skip fsync).
+    /// The named buffer wrote(can be dirty; implementation may return before fdatasync).
     ItemWrote(Name),
 
     /// Named item got.
@@ -41,4 +41,39 @@ pub enum Event {
     InvalidItem(String),
 
     UnexpectedError(String),
+}
+
+impl TryFrom<Event> for Vec<Name> {
+    type Error = Event;
+    fn try_from(v: Event) -> Result<Self, Self::Error> {
+        match v {
+            Event::NamesGot(names) => Ok(names),
+            _ => Err(Event::BadRequest),
+        }
+    }
+}
+
+impl TryFrom<Event> for Item {
+    type Error = Event;
+    fn try_from(v: Event) -> Result<Self, Self::Error> {
+        match v {
+            Event::ItemGot(named) => Ok(named.into_item()),
+            _ => Err(Event::BadRequest),
+        }
+    }
+}
+
+impl TryFrom<Event> for Name {
+    type Error = Event;
+    fn try_from(v: Event) -> Result<Self, Self::Error> {
+        match v {
+            Event::Empty(name) => Ok(name),
+            Event::Used(name) => Ok(name),
+            Event::ItemWrote(name) => Ok(name),
+            Event::NoEntry(name) => Ok(name),
+            Event::Broken(name) => Ok(name),
+            Event::ItemGot(named) => Ok(Name::from(named)),
+            _ => Err(Event::BadRequest),
+        }
+    }
 }

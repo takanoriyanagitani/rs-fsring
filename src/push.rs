@@ -1,14 +1,17 @@
+use std::path::Path;
+
 use crate::evt::Event;
 use crate::item::{Item, Name, NamedItem};
+use crate::write;
 
 /// Creates new pusher which uses closures to get/set name and write `NamedItem`.
 pub fn push_new<G, S, W>(
-    get_name: G,
+    mut get_name: G,
     mut set_next: S,
     wtr: W,
 ) -> impl FnMut(Item) -> Result<(), Event>
 where
-    G: Fn() -> Result<Name, Event>,
+    G: FnMut() -> Result<Name, Event>,
     S: FnMut(Name) -> Result<(), Event>,
     W: Fn(NamedItem) -> Result<Name, Event>,
 {
@@ -23,6 +26,42 @@ where
             Err(evt) => Err(evt),
         }
     }
+}
+
+fn push_new_unmanaged<G, W>(mut get_name: G, wtr: W) -> impl FnMut(Item) -> Result<(), Event>
+where
+    G: FnMut() -> Result<Name, Event>,
+    W: Fn(NamedItem) -> Result<Name, Event>,
+{
+    move |item: Item| {
+        let name: Name = get_name()?;
+        let named: NamedItem = NamedItem::new(item, name);
+        wtr(named)?;
+        Ok(())
+    }
+}
+
+/// Creates new unmanaged push handler which uses closures to get `Name` and write `NamedItem`.
+pub fn push_handler_new_unmanaged<G, W>(get_name: G, wtr: W) -> impl FnMut(Item) -> Event
+where
+    G: FnMut() -> Result<Name, Event>,
+    W: Fn(NamedItem) -> Result<Name, Event>,
+{
+    let mut f = push_new_unmanaged(get_name, wtr);
+    move |i: Item| f(i).map(|_| Event::Success).unwrap_or_else(|e| e)
+}
+
+/// Creates new unmanaged push handler which uses default writer to write `NamedItem`.
+pub fn push_handler_new_unmanaged_default<G, P>(
+    get_name: G,
+    dirname: P,
+) -> impl FnMut(Item) -> Event
+where
+    G: FnMut() -> Result<Name, Event>,
+    P: AsRef<Path>,
+{
+    let wtr = write::writer_checked_new_default(dirname);
+    push_handler_new_unmanaged(get_name, wtr)
 }
 
 #[cfg(test)]

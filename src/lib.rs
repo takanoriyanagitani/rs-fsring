@@ -11,6 +11,7 @@ pub mod next;
 pub mod push;
 pub mod read;
 pub mod request;
+pub mod u;
 pub mod write;
 
 use crate::evt::Event;
@@ -29,18 +30,18 @@ where
     move |req: Request| r.handle(req)
 }
 
-struct FsRingBuffer<G, D, P, L> {
-    get: G,
-    del: D,
-    push: P,
-    list: L,
+pub struct FsRingBuffer<G, D, P, L> {
+    pub get: G,
+    pub del: D,
+    pub push: P,
+    pub list: L,
 }
 
 impl<G, D, P, L> FsRingBuffer<G, D, P, L>
 where
     G: Fn(Name) -> Event,
     D: Fn(Name) -> Event,
-    P: Fn(Item) -> Event,
+    P: FnMut(Item) -> Event,
     L: Fn() -> Event,
 {
     fn handle_get(&mut self, name: Name) -> Event {
@@ -64,7 +65,7 @@ impl<G, D, P, L> RingBuffer for FsRingBuffer<G, D, P, L>
 where
     G: Fn(Name) -> Event,
     D: Fn(Name) -> Event,
-    P: Fn(Item) -> Event,
+    P: FnMut(Item) -> Event,
     L: Fn() -> Event,
 {
     fn handle(&mut self, req: Request) -> Event {

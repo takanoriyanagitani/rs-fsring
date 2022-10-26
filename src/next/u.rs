@@ -5,6 +5,20 @@ use std::path::Path;
 use crate::evt::Event;
 use crate::item::Name;
 
+fn get_next_u8(prev: u8) -> u8 {
+    prev.checked_add(1).unwrap_or(0)
+}
+
+/// Creates new name iterator which uses sequential u8 numbers.
+pub fn next_u8_iter_new(init: u8) -> impl Iterator<Item = Name> {
+    let n: Name = Name::from(init);
+    std::iter::successors(Some(n), |prev: &Name| {
+        u8::try_from(prev).map(get_next_u8).map(Name::from).ok()
+    })
+    .take(256)
+}
+
+/// Creates new next generator which uses random number source to create `Name`.
 pub fn next_random_u8_new<R>(mut random_source: R) -> impl FnMut() -> Result<Name, Event>
 where
     R: FnMut() -> Result<u8, Event>,
@@ -12,6 +26,7 @@ where
     move || random_source().map(Name::from)
 }
 
+/// Creates new next generator which uses `Read` to get next random bytes.
 pub fn next_random_u8_new_from_read<R>(mut r: R) -> impl FnMut() -> Result<Name, Event>
 where
     R: Read,
@@ -25,6 +40,7 @@ where
     next_random_u8_new(rs)
 }
 
+/// Creates new next generator which tries to use a file as random bytes source.
 pub fn next_random_u8_new_from_path<P>(p: P) -> Result<impl FnMut() -> Result<Name, Event>, Event>
 where
     P: AsRef<Path>,
@@ -35,6 +51,7 @@ where
     Ok(next_random_u8_new_from_read(f))
 }
 
+/// Creates new next generator which tries to use /dev/urandom as random bytes source.
 pub fn next_random_u8_new_from_path_default() -> Result<impl FnMut() -> Result<Name, Event>, Event>
 {
     next_random_u8_new_from_path("/dev/urandom")
@@ -73,6 +90,19 @@ mod test_u {
             let s: String = n.into();
             let r = u8::from_str_radix(s.as_str(), 16);
             assert_eq!(r.is_ok(), true);
+        }
+    }
+
+    mod next_u8_iter_new {
+        use crate::item::Name;
+        use crate::next;
+
+        #[test]
+        fn test_256() {
+            let i = next::u::next_u8_iter_new(0x43);
+            let v: Vec<Name> = i.collect();
+            assert_eq!(v.len(), 256);
+            assert_eq!(v[255], Name::from("42"));
         }
     }
 }

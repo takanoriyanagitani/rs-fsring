@@ -1,3 +1,5 @@
+use crate::evt::Event;
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Item {
     raw: Vec<u8>,
@@ -12,6 +14,12 @@ impl From<Item> for Vec<u8> {
 impl From<Vec<u8>> for Item {
     fn from(raw: Vec<u8>) -> Self {
         Self { raw }
+    }
+}
+
+impl From<&[u8]> for Item {
+    fn from(bytes: &[u8]) -> Self {
+        Self::from(bytes.to_vec())
     }
 }
 
@@ -45,6 +53,14 @@ impl From<u8> for Name {
         Self { name }
     }
 }
+impl TryFrom<&Name> for u8 {
+    type Error = Event;
+    fn try_from(n: &Name) -> Result<Self, Self::Error> {
+        let s: &str = n.name.as_str();
+        u8::from_str_radix(s, 16)
+            .map_err(|e| Event::UnexpectedError(format!("Invalid name: {}", e)))
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct NamedItem {
@@ -59,6 +75,14 @@ impl NamedItem {
 
     pub fn as_name(&self) -> &Name {
         &self.name
+    }
+
+    pub fn into_pair(self) -> (Name, Item) {
+        (self.name, self.item)
+    }
+
+    pub fn into_item(self) -> Item {
+        self.item
     }
 }
 

@@ -1,5 +1,10 @@
+use std::path::Path;
+
+use crate::empty;
 use crate::evt::Event;
 use crate::item::Name;
+
+pub mod u;
 
 fn names2checked<C>(unchecked: Vec<Name>, check: &C) -> Result<Vec<Name>, Event>
 where
@@ -39,6 +44,18 @@ where
         Ok(names) => Event::NamesGot(names),
         Err(e) => e,
     }
+}
+
+/// Creates checked list handler which uses default (non-)empty checker.
+pub fn list_request_handler_new_default<L, P>(list: L, dirname: P) -> impl Fn() -> Event
+where
+    L: Fn() -> Result<Vec<Name>, Event>,
+    P: AsRef<Path>,
+{
+    let empty_checker = empty::empty_checker_new_default(dirname);
+    let non_empty_checker = empty::nonempty_checker_new(empty_checker);
+    let filter = move |n: &Name| non_empty_checker(n.clone());
+    list_request_handler_new(list, filter)
 }
 
 #[cfg(test)]
@@ -95,6 +112,26 @@ mod test_list {
             let f = list::list_request_handler_new(flist, filter);
             let evt: Event = f();
             assert_eq!(evt, Event::NoPerm("".into()),);
+        }
+    }
+
+    mod list_request_handler_new_default {
+        use std::path::Path;
+
+        use crate::evt::Event;
+        use crate::item::Name;
+        use crate::list;
+
+        #[test]
+        #[ignore]
+        fn test_all_empty() {
+            let dirname = Path::new("./test.d/list/list_request_handler_new_default/empty.d");
+            std::fs::create_dir_all(&dirname).unwrap();
+
+            let lst = || Ok(vec![Name::from("42"), Name::from("31")]);
+            let f = list::list_request_handler_new_default(lst, dirname);
+            let evt = f();
+            assert_eq!(evt, Event::NamesGot(vec![]));
         }
     }
 }

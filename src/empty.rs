@@ -7,6 +7,7 @@ use crate::compose::compose;
 use crate::item::Name;
 
 use crate::evt::Event;
+use crate::full;
 
 fn len2empty(l: u64) -> bool {
     0 == l
@@ -44,6 +45,23 @@ where
     compose(f, path2empty)
 }
 
+/// Creates non-empty checker which uses a closure to determin if the named item is empty.
+pub fn nonempty_checker_new<E>(empty_checker: E) -> impl Fn(Name) -> Result<bool, Event>
+where
+    E: Fn(Name) -> Result<bool, Event>,
+{
+    move |n: Name| empty_checker(n).map(|empty: bool| !empty)
+}
+
+/// Creates default empty checker which uses dirname to create path builder.
+pub fn empty_checker_new_default<P>(dirname: P) -> impl Fn(Name) -> Result<bool, Event>
+where
+    P: AsRef<Path>,
+{
+    let builder = full::fullpath_builder_new(dirname);
+    name2empty_fs_new(builder)
+}
+
 #[cfg(test)]
 mod test_empty {
 
@@ -74,6 +92,40 @@ mod test_empty {
         fn test_err() {
             let r = empty::kind2empty(ErrorKind::PermissionDenied);
             assert_eq!(true, r.is_err());
+        }
+    }
+
+    mod nonempty_checker_new {
+        use crate::empty;
+        use crate::item::Name;
+
+        #[test]
+        fn test_empty() {
+            let echk = |_: Name| Ok(true);
+            let nchk = empty::nonempty_checker_new(echk);
+            let not_empty: bool = nchk(Name::from("")).unwrap();
+            assert_eq!(not_empty, false);
+        }
+    }
+
+    mod empty_checker_new_default {
+        use std::fs::File;
+        use std::path::Path;
+
+        use crate::empty;
+        use crate::item::Name;
+
+        #[test]
+        #[ignore]
+        fn test_empty() {
+            let dirname = Path::new("./test.d/empty/empty_checker_new_default/empty.d");
+            std::fs::create_dir_all(&dirname).unwrap();
+            let name: &str = "00";
+            let n: Name = Name::from(name);
+            File::create(dirname.join(name)).unwrap();
+            let f = empty::empty_checker_new_default(dirname);
+            let empty: bool = f(n).unwrap();
+            assert_eq!(empty, true);
         }
     }
 }
