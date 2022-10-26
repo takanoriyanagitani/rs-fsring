@@ -1,7 +1,6 @@
 pub mod compose;
 pub mod del;
 pub mod empty;
-pub mod err;
 pub mod evt;
 pub mod full;
 pub mod integer;
