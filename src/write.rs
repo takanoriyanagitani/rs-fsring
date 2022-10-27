@@ -119,4 +119,29 @@ mod test_write {
             assert_eq!(r, Err(Event::Again));
         }
     }
+
+    mod writer_unchecked_new_default {
+        use std::io::ErrorKind;
+        use std::path::Path;
+
+        use crate::item::{Item, Name, NamedItem};
+        use crate::write;
+
+        #[test]
+        #[ignore]
+        fn test_dir_noent() {
+            let dirname = Path::new("./test.d/write/writer_unchecked_new_default/dir_noent.d");
+            std::fs::remove_dir_all(&dirname)
+                .map(|_| ())
+                .map_err(|e| e.kind())
+                .or_else(|k| match k {
+                    ErrorKind::NotFound => Ok(()),
+                    _ => Err(k),
+                })
+                .unwrap();
+            let f = write::writer_unchecked_new_default(dirname);
+            let r = f(NamedItem::new(Item::from(vec![]), Name::from("empty.dat")));
+            assert_eq!(r.is_err(), true);
+        }
+    }
 }
