@@ -1,5 +1,6 @@
 use crate::item::{Item, Name};
 
+/// A list of supported operations.
 pub enum Request {
     /// Get a named item.
     Get(Name),

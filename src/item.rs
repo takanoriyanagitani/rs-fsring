@@ -1,5 +1,6 @@
 use crate::evt::Event;
 
+/// Contains raw bytes.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Item {
     raw: Vec<u8>,
@@ -23,6 +24,7 @@ impl From<&[u8]> for Item {
     }
 }
 
+/// Contains name string.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Name {
     name: String,
@@ -62,6 +64,7 @@ impl TryFrom<&Name> for u8 {
     }
 }
 
+/// A named `Item` with `Name`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct NamedItem {
     item: Item,

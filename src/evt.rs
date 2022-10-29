@@ -1,5 +1,6 @@
 use crate::item::{Item, Name, NamedItem};
 
+/// A list of request handler results.
 #[derive(Debug, PartialEq, Eq)]
 pub enum Event {
     Success,

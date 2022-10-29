@@ -18,10 +18,12 @@ use crate::request::Request;
 
 use crate::item::{Item, Name};
 
+/// An interface for creating request handler.
 pub trait RingBuffer {
     fn handle(&mut self, req: Request) -> Event;
 }
 
+/// Creates new request handler.
 pub fn ring_buffer_new<R>(mut r: R) -> impl FnMut(Request) -> Event
 where
     R: RingBuffer,
@@ -29,6 +31,7 @@ where
     move |req: Request| r.handle(req)
 }
 
+/// Helper struct for creating request handler.
 pub struct FsRingBuffer<G, D, P, L> {
     pub get: G,
     pub del: D,
