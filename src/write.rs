@@ -39,10 +39,13 @@ fn item2path<P>(i: Item, p: P) -> Result<(), Event>
 where
     P: AsRef<Path> + std::fmt::Debug,
 {
-    let f: File = File::create(p.as_ref()).map_err(|e| {
+    let mut f: File = File::create(p.as_ref()).map_err(|e| {
         Event::UnexpectedError(format!("Unable to create named item({:#?}): {}", p, e))
     })?;
-    item2write(i, f)
+    item2write(i, f.by_ref())?;
+    f.sync_data()
+        .map_err(|e| Event::UnexpectedError(format!("Unable to save to storage: {}", e)))?;
+    Ok(())
 }
 
 /// Creates new unchecked writer which uses a closure to build path to write a named item.
