@@ -14,21 +14,3 @@ pub enum Request {
     /// List names.
     List,
 }
-
-impl Request {
-    pub fn new_get(n: Name) -> Self {
-        Self::Get(n)
-    }
-
-    pub fn new_del(n: Name) -> Self {
-        Self::Del(n)
-    }
-
-    pub fn new_push(i: Item) -> Self {
-        Self::Push(i)
-    }
-
-    pub fn new_list() -> Self {
-        Self::List
-    }
-}
