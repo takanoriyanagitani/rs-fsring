@@ -2,6 +2,7 @@ use crate::item::{Item, Name, NamedItem};
 
 /// A list of request handler results.
 #[derive(Debug, PartialEq, Eq)]
+#[non_exhaustive]
 pub enum Event {
     Success,
 
@@ -37,6 +38,9 @@ pub enum Event {
 
     /// Item got, but its contents broken(power failure?).
     Broken(Name),
+
+    /// Broken items removed.
+    BrokenItemsRemoved(u64),
 
     /// Item got, but unreadable(bit rot?).
     InvalidItem(String),

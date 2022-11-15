@@ -1,6 +1,7 @@
 use crate::item::{Item, Name};
 
 /// A list of supported operations.
+#[non_exhaustive]
 pub enum Request {
     /// Get a named item.
     Get(Name),
@@ -13,4 +14,7 @@ pub enum Request {
 
     /// List names.
     List,
+
+    /// Remove broken items.
+    Vacuum,
 }
