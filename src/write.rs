@@ -23,29 +23,66 @@ where
         .map_err(|e| Event::UnexpectedError(format!("Unable to flush: {}", e)))
 }
 
-fn item2write<W>(i: Item, mut w: W) -> Result<(), Event>
+fn checksum_nop(_: &[u8]) -> Vec<u8> {
+    vec![]
+}
+
+fn write_with_checksum<W, C>(dat: &[u8], writer: &mut W, checksum: &C) -> Result<(), Event>
 where
     W: Write,
+    C: Fn(&[u8]) -> Vec<u8>,
 {
-    let mut bw = BufWriter::new(w.by_ref());
-    let v: Vec<u8> = i.into();
-    write_bytes(&mut bw, &v)?;
+    let chk: Vec<u8> = checksum(dat);
+    let mut bw = BufWriter::new(writer.by_ref());
+    write_bytes(&mut bw, dat)?;
+    write_bytes(&mut bw, &chk)?;
     write_flush(bw)?;
-    write_flush(w)?;
+    write_flush(writer)?;
     Ok(())
 }
 
-fn item2path<P>(i: Item, p: P) -> Result<(), Event>
+fn item2write_with_checksum<W, C>(i: Item, mut writer: W, checksum: &C) -> Result<(), Event>
+where
+    W: Write,
+    C: Fn(&[u8]) -> Vec<u8>,
+{
+    let dat: Vec<_> = i.into();
+    write_with_checksum(&dat, &mut writer, checksum)
+}
+
+fn item2path_with_checksum<P, C>(i: Item, p: P, checksum: &C) -> Result<(), Event>
 where
     P: AsRef<Path> + std::fmt::Debug,
+    C: Fn(&[u8]) -> Vec<u8>,
 {
     let mut f: File = File::create(p.as_ref()).map_err(|e| {
         Event::UnexpectedError(format!("Unable to create named item({:#?}): {}", p, e))
     })?;
-    item2write(i, f.by_ref())?;
+    item2write_with_checksum(i, f.by_ref(), checksum)?;
     f.sync_data()
         .map_err(|e| Event::UnexpectedError(format!("Unable to save to storage: {}", e)))?;
     Ok(())
+}
+
+/// Creates new unchecked writer which uses closures to build path and compute checksum.
+///
+/// # Arguments
+/// - path_builder: Builds a path for a named item.
+/// - checksum:     Computes checksum.
+pub fn writer_unchecked_new_checksum<B, C>(
+    path_builder: B,
+    checksum: C,
+) -> impl Fn(NamedItem) -> Result<Name, Event>
+where
+    B: Fn(Name) -> PathBuf,
+    C: Fn(&[u8]) -> Vec<u8>,
+{
+    move |named: NamedItem| {
+        let (name, item) = named.into_pair();
+        let p: PathBuf = path_builder(name.clone());
+        item2path_with_checksum(item, p, &checksum)?;
+        Ok(name)
+    }
 }
 
 /// Creates new unchecked writer which uses a closure to build path to write a named item.
@@ -53,12 +90,24 @@ pub fn writer_unchecked_new<B>(path_builder: B) -> impl Fn(NamedItem) -> Result<
 where
     B: Fn(Name) -> PathBuf,
 {
-    move |named: NamedItem| {
-        let (name, item) = named.into_pair();
-        let p: PathBuf = path_builder(name.clone());
-        item2path(item, p)?;
-        Ok(name)
-    }
+    writer_unchecked_new_checksum(path_builder, checksum_nop)
+}
+
+/// Creates new unchecked writer which uses default path builder.
+///
+/// # Arguments
+/// - dirname: Path to store buffer files.
+/// - checksum:     Computes checksum.
+pub fn writer_unchecked_new_default_with_checksum<P, C>(
+    dirname: P,
+    checksum: C,
+) -> impl Fn(NamedItem) -> Result<Name, Event>
+where
+    P: AsRef<Path>,
+    C: Fn(&[u8]) -> Vec<u8>,
+{
+    let path_builder = full::fullpath_builder_new(dirname);
+    writer_unchecked_new_checksum(path_builder, checksum)
 }
 
 /// Creates new unchecked writer which uses default path builder.
@@ -93,16 +142,32 @@ where
     }
 }
 
+/// Creates new checked writer which uses default closures to write and do empty check.
+///
+/// # Arguments
+/// - dirname: Path to store buffer files.
+/// - checksum:     Computes checksum.
+pub fn writer_checked_new_default_with_checksum<P, C>(
+    dirname: P,
+    checksum: C,
+) -> impl Fn(NamedItem) -> Result<Name, Event>
+where
+    P: AsRef<Path>,
+    C: Fn(&[u8]) -> Vec<u8>,
+{
+    let p: &Path = dirname.as_ref();
+    let unchecked = writer_unchecked_new_default_with_checksum(p.to_path_buf(), checksum);
+    let empty_checker = empty::empty_checker_new_default(p.to_path_buf());
+    let f = move |n: &Name| empty_checker(n.clone());
+    writer_checked_new(unchecked, f)
+}
+
 /// Creates new checked writer which uses default unchecked writer and default empty checker.
 pub fn writer_checked_new_default<P>(dirname: P) -> impl Fn(NamedItem) -> Result<Name, Event>
 where
     P: AsRef<Path>,
 {
-    let p: &Path = dirname.as_ref();
-    let unchecked = writer_unchecked_new_default(p.to_path_buf());
-    let empty_checker = empty::empty_checker_new_default(p.to_path_buf());
-    let f = move |n: &Name| empty_checker(n.clone());
-    writer_checked_new(unchecked, f)
+    writer_checked_new_default_with_checksum(dirname, checksum_nop)
 }
 
 #[cfg(test)]
