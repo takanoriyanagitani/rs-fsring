@@ -51,6 +51,30 @@ where
     move |i: Item| f(i).map(|_| Event::Success).unwrap_or_else(|e| e)
 }
 
+/// Creates new checked unmanaged push handler which uses default writer to write `NamedItem`.
+///
+/// # Arguments
+/// - get_name: Gets next name.
+/// - dirname:  Path to store buffer files.
+/// - checksum:     Computes checksum.
+pub fn push_handler_new_unmanaged_default_with_checksum<G, P, C>(
+    get_name: G,
+    dirname: P,
+    checksum: C,
+) -> impl FnMut(Item) -> Event
+where
+    G: FnMut() -> Result<Name, Event>,
+    P: AsRef<Path>,
+    C: Fn(&[u8]) -> Vec<u8>,
+{
+    let wtr = write::writer_checked_new_default_with_checksum(dirname, checksum);
+    push_handler_new_unmanaged(get_name, wtr)
+}
+
+fn checksum_nop(_: &[u8]) -> Vec<u8> {
+    vec![]
+}
+
 /// Creates new unmanaged push handler which uses default writer to write `NamedItem`.
 pub fn push_handler_new_unmanaged_default<G, P>(
     get_name: G,
@@ -60,8 +84,7 @@ where
     G: FnMut() -> Result<Name, Event>,
     P: AsRef<Path>,
 {
-    let wtr = write::writer_checked_new_default(dirname);
-    push_handler_new_unmanaged(get_name, wtr)
+    push_handler_new_unmanaged_default_with_checksum(get_name, dirname, checksum_nop)
 }
 
 #[cfg(test)]
