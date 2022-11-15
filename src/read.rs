@@ -6,20 +6,46 @@ use crate::evt::Event;
 use crate::full;
 use crate::item::{Item, Name, NamedItem};
 
-fn err2evt(n: Name, k: ErrorKind) -> Event {
+fn kind2event(n: Name, k: ErrorKind) -> Event {
     match k {
+        // the buffer empty.
         ErrorKind::NotFound => Event::NoEntry(n),
+
+        // permanent error. the buffer must be removed.
+        ErrorKind::PermissionDenied => Event::Broken(n),
+
+        // may be broken(bit rot detected by btrfs?)
+        ErrorKind::InvalidInput => Event::Broken(n),
+        ErrorKind::InvalidData => Event::Broken(n),
+        ErrorKind::Unsupported => Event::Broken(n),
+        ErrorKind::UnexpectedEof => Event::Broken(n),
+
+        // Try again(network file system?).
+        ErrorKind::TimedOut => Event::Again,
+
+        // Try again.
+        ErrorKind::OutOfMemory => Event::Again,
+
         _ => Event::UnexpectedError(format!("Unable to get named item: {}", k)),
     }
 }
 
-fn read2buf<R>(r: R, buf: &mut Vec<u8>) -> Result<(), ErrorKind>
+fn err2event(n: Name, e: std::io::Error, io_error_num: i32) -> Event {
+    e.raw_os_error()
+        .and_then(|raw_err_num: i32| {
+            raw_err_num
+                .eq(&io_error_num)
+                .then(|| Event::Broken(n.clone()))
+        })
+        .unwrap_or_else(|| kind2event(n, e.kind()))
+}
+
+fn read2buf<R>(r: R, buf: &mut Vec<u8>) -> Result<(), std::io::Error>
 where
     R: Read,
 {
     let mut br = BufReader::new(r);
-    br.read_to_end(buf).map_err(|e| e.kind())?;
-    Ok(())
+    br.read_to_end(buf).map(|_| ())
 }
 
 fn data2checked(
@@ -57,6 +83,7 @@ fn read2item_with_checksum<R, C>(
     r: R,
     checksize: usize,
     checksum: &C,
+    io_error_num: i32,
 ) -> Result<Item, Event>
 where
     R: Read,
@@ -64,7 +91,7 @@ where
 {
     let mut buf: Vec<u8> = Vec::new();
     read2buf(r, &mut buf)
-        .map_err(|e| err2evt(n.clone(), e))
+        .map_err(|e| err2event(n.clone(), e, io_error_num))
         .and_then(|_| raw2item_with_checksum(n, buf, checksize, checksum))
 }
 
@@ -73,14 +100,15 @@ fn path2item_with_checksum<P, C>(
     p: P,
     checksize: usize,
     checksum: &C,
+    io_err_num: i32,
 ) -> Result<Item, Event>
 where
     P: AsRef<Path>,
     C: Fn(&[u8]) -> Vec<u8>,
 {
     File::open(p)
-        .map_err(|e| err2evt(n.clone(), e.kind()))
-        .and_then(|f: File| read2item_with_checksum(n, f, checksize, checksum))
+        .map_err(|e| err2event(n.clone(), e, io_err_num))
+        .and_then(|f: File| read2item_with_checksum(n, f, checksize, checksum, io_err_num))
 }
 
 /// Creates default checked read handler which uses default path builder.
@@ -100,7 +128,8 @@ where
 {
     move |n: Name| {
         let p: PathBuf = path_builder(n.clone());
-        match path2item_with_checksum(n.clone(), p, checksize, &checksum) {
+        // libc::EIO = 5(linux, windows, macos)
+        match path2item_with_checksum(n.clone(), p, checksize, &checksum, 5) {
             Ok(item) => Event::ItemGot(NamedItem::new(item, n)),
             Err(e) => e,
         }

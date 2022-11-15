@@ -193,5 +193,29 @@ mod test_lib {
                 }
             }
         }
+
+        #[test]
+        #[ignore]
+        fn test_valid() {
+            let dirname = Path::new("./test.d/lib/remove_broken_buffers/test_valid.d");
+            fs::remove_dir_all(&dirname).ok();
+            fs::create_dir_all(&dirname).unwrap();
+
+            let chk = |_: &[u8]| b"cafef00ddeadbeafface864299792458".to_vec();
+
+            let mut handler =
+                ring_buffer_u8_new_default_with_checksum(&dirname, 32, chk, chk).unwrap();
+            let filename = dirname.join("42");
+            fs::write(filename, b"ZZcafef00ddeadbeafface864299792458").unwrap();
+            let q: Request = Request::Vacuum;
+            match handler(q) {
+                Event::BrokenItemsRemoved(cnt) => {
+                    assert_eq!(cnt, 0);
+                }
+                e => {
+                    panic!("Unexpected event: {:#?}", e)
+                }
+            }
+        }
     }
 }

@@ -1,6 +1,6 @@
 [package]
 name = "rs-fsring"
-version = "3.0.0"
+version = "3.1.0"
 edition = "2021"
 description = "A ring(like) buffer using filesystem"
 license = "Apache-2.0"
