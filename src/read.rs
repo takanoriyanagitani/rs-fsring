@@ -83,6 +83,12 @@ where
         .and_then(|f: File| read2item_with_checksum(n, f, checksize, checksum))
 }
 
+/// Creates default checked read handler which uses default path builder.
+///
+/// # Arguments
+/// - path_builder: Builds a path for a named item.
+/// - checksize: Checksum byte length.
+/// - checksum:  Computes checksum.
 pub fn read_handler_new_with_checksum<B, C>(
     path_builder: B,
     checksize: usize,
@@ -101,6 +107,12 @@ where
     }
 }
 
+/// Creates default checked read handler which uses default path builder.
+///
+/// # Arguments
+/// - dirname: Path to open buffer files.
+/// - checksize: Checksum byte length.
+/// - checksum:  Computes checksum.
 pub fn read_handler_new_default_with_checksum<P, C>(
     dirname: P,
     checksize: usize,
